@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Business;
+use App\Models\BusinessTypePreset;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -12,34 +14,30 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
+        $preset = BusinessTypePreset::query()->first() ?? BusinessTypePreset::query()->create([
+            'name' => 'corner_store',
+            'description' => 'Tienda de barrio.',
+            'config' => ['requires_expiration' => false, 'variable_weight' => false],
+            'is_active' => true,
+        ]);
+
+        $business = Business::query()->create([
+            'name' => fake()->company(),
+            'business_type_preset_id' => $preset->id,
+        ]);
+
         return [
-            'name' => fake()->name(),
+            'business_id' => $business->id,
+            'full_name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'role' => 'owner',
+            'is_active' => true,
             'remember_token' => Str::random(10),
         ];
-    }
-
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
     }
 }
