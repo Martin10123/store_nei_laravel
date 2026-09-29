@@ -58,3 +58,8 @@ test('registers a store, creates a product, and hides it from another store', fu
 
     expect(Product::query()->withoutGlobalScopes()->count())->toBe(1);
 });
+
+test('private api answers 401 when there is no token', function () {
+    $this->getJson('/api/products')->assertUnauthorized();
+    $this->getJson('/api/dashboard')->assertUnauthorized();
+});

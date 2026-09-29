@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['business_id', 'closed_on', 'total_sold', 'total_cost', 'total_credit', 'top_product_id'])]
+#[Fillable(['business_id', 'closed_on', 'total_sold', 'total_cost', 'total_credit', 'top_product_id', 'ai_summary'])]
 class DailyClose extends Model
 {
     use BelongsToBusiness;

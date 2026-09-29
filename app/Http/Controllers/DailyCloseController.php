@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\DailyClose;
+use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleLine;
-use Carbon\Carbon;
+use App\Support\BogotaDay;
+use App\Support\MoneyText;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -32,9 +34,11 @@ class DailyCloseController extends Controller
 
     private function snapshot(Request $request, bool $persist)
     {
-        $closedOn = $request->validate([
+        $requested = $request->validate([
             'closed_on' => ['nullable', 'date'],
-        ])['closed_on'] ?? Carbon::now('America/Bogota')->toDateString();
+        ])['closed_on'] ?? null;
+
+        [$closedOn, $start, $end] = BogotaDay::bounds($requested);
 
         $existing = DailyClose::query()->whereDate('closed_on', $closedOn)->first();
 
@@ -43,9 +47,6 @@ class DailyCloseController extends Controller
                 'closed_on' => 'Ese día ya está cerrado.',
             ]);
         }
-
-        $start = Carbon::parse($closedOn, 'America/Bogota')->startOfDay()->utc();
-        $end = Carbon::parse($closedOn, 'America/Bogota')->endOfDay()->utc();
 
         $sales = Sale::query()->whereBetween('created_at', [$start, $end]);
         $totalSold = round((float) (clone $sales)->sum('total'), 2);
@@ -75,15 +76,32 @@ class DailyCloseController extends Controller
             ];
         }
 
+        $topProductName = $topProductId
+            ? Product::query()->whereKey($topProductId)->value('name')
+            : null;
+
         $close = DailyClose::create([
             'closed_on' => $closedOn,
             'total_sold' => $totalSold,
             'total_cost' => $totalCost,
             'total_credit' => $totalCredit,
             'top_product_id' => $topProductId,
+            'ai_summary' => $this->summary($closedOn, $totalSold, $totalCost, $totalCredit, $topProductName),
         ]);
         $close->load('topProduct:id,name');
 
         return response()->json($close, 201);
+    }
+
+    private function summary(string $closedOn, float $totalSold, float $totalCost, float $totalCredit, ?string $topProductName): string
+    {
+        $sold = MoneyText::pesos($totalSold);
+        $cost = MoneyText::pesos($totalCost);
+        $credit = MoneyText::pesos($totalCredit);
+        $top = $topProductName
+            ? "El producto más vendido fue {$topProductName}."
+            : 'No hubo un producto destacado.';
+
+        return "El {$closedOn} se vendió {$sold}, con un costo de {$cost} y {$credit} en fiado. {$top}";
     }
 }

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['credit_customer_id', 'sale_id', 'movement_type', 'amount'])]
+#[Fillable(['credit_customer_id', 'sale_id', 'movement_type', 'amount', 'due_on'])]
 class CreditMovement extends Model
 {
     public const UPDATED_AT = null;
@@ -15,6 +15,7 @@ class CreditMovement extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'due_on' => 'date:Y-m-d',
         ];
     }
 

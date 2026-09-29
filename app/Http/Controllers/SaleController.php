@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CreditCustomer;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Support\StockAvailability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -30,6 +31,7 @@ class SaleController extends Controller
             'lines.*.product_id' => ['required', 'integer'],
             'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
             'lines.*.unit_price' => ['nullable', 'numeric', 'min:0'],
+            'due_on' => ['nullable', 'date', 'prohibited_unless:payment_method,credit'],
         ]);
 
         if ($data['payment_method'] === 'credit' && empty($data['credit_customer_id'])) {
@@ -71,8 +73,9 @@ class SaleController extends Controller
 
                 $quantity = round((float) $line['quantity'], 3);
                 $stock = round((float) $product->current_stock, 3);
+                $available = StockAvailability::available($product);
 
-                if ($quantity > $stock) {
+                if ($quantity > $available) {
                     throw ValidationException::withMessages([
                         'lines' => "No hay suficiente stock de {$product->name}.",
                     ]);
@@ -121,6 +124,7 @@ class SaleController extends Controller
                     'sale_id' => $sale->id,
                     'movement_type' => 'charge',
                     'amount' => $total,
+                    'due_on' => $data['due_on'] ?? null,
                 ]);
             }
 

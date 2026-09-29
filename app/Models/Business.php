@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'tax_id', 'business_type_preset_id', 'address', 'phone', 'whatsapp_number', 'is_active'])]
+#[Fillable(['name', 'tax_id', 'business_type_preset_id', 'address', 'phone', 'whatsapp_number', 'public_slug', 'is_active'])]
 class Business extends Model
 {
     protected function casts(): array
